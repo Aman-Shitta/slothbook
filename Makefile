@@ -1,5 +1,5 @@
 run:
-	go run cmd/main.go
+	go run cmd/slotbook-api.go
 
 test:
 	echo "test not implemnted"
@@ -11,5 +11,5 @@ fmt:
 	go fmt
 
 build:
-	go build -o server ./cmd/main.go
+	go build -o server ./cmd/
 	./server
