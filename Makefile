@@ -2,7 +2,7 @@ run:
 	go run cmd/slotbook-api.go
 
 test:
-	echo "test not implemnted"
+	go test ./internal/test/
 
 lint:
 	echo "lint not implemnted"
