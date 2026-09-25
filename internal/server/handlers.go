@@ -52,47 +52,51 @@ type ResourceResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type ResourcesListResponse struct {
+	Resources []ResourceResponse `json:"resources" binding:"required"`
+}
+
 type ResourceUpdateRequest struct {
-	Name     string `json:"name,omitempty"`
-	Kind     string `json:"kind" binding:"omitempty,oneof=room studio desk"`
-	Capacity int    `json:"capacity,omitempty" binding:"lte=500,gt=0"`
+	Name     *string `json:"name,omitempty"`
+	Kind     *string `json:"kind" binding:"omitempty,oneof=room studio desk"`
+	Capacity *int    `json:"capacity,omitempty" binding:"lte=500,gt=0"`
 }
 
 func ResourcesHandler(c *gin.Context) {
 
-	var res Response
+	var response Response
 	switch c.Request.Method {
 	case "POST":
 		var req ResourceCreateRequest
 
 		if err := c.ShouldBindJSON(&req); err != nil {
-			res.Error = "Something went wrong"
-			c.JSON(400, res)
+			response.Error = fmt.Sprintf("Something went wrong : %s", err.Error())
+			c.JSON(400, response)
 			return
 		}
 
 		resourceC, err := resource.CreateNew(req.Name, req.Kind, req.Capacity)
 
 		if err != nil {
-			res.Error = fmt.Sprintf("Something went wrong: %s", err.Error())
-			c.JSON(400, res)
+			response.Error = fmt.Sprintf("Something went wrong: %s", err.Error())
+			c.JSON(400, response)
 			return
 		}
 
 		ResourcesData[resourceC.Id] = *resourceC
-		res.Success = true
-		res.Data = "Resource Created"
+		response.Success = true
+		response.Data = "Resource Created"
 
-		c.JSON(201, res)
+		c.JSON(201, response)
 		return
+
 	case "GET":
 
-		var response Response
-		resources := []ResourceResponse{}
+		var data ResourcesListResponse
 
 		for _, resource := range ResourcesData {
-			resources = append(
-				resources,
+			data.Resources = append(
+				data.Resources,
 				ResourceResponse{
 					Id:        resource.Id,
 					Name:      resource.Name,
@@ -104,8 +108,8 @@ func ResourcesHandler(c *gin.Context) {
 		}
 
 		response.Success = true
-		response.Data = resources
-		response.Meta = &Meta{Total: len(resources), TotalPages: min(1, len(resources))}
+		response.Data = data
+		response.Meta = &Meta{Total: len(data.Resources), TotalPages: min(1, len(data.Resources))}
 
 		c.JSON(200, response)
 		return
@@ -152,16 +156,32 @@ func ResourceHandler(c *gin.Context) {
 		}
 
 		if resource, ok := ResourcesData[id]; ok {
-			if resourceUpdate.Name != "" {
-				resource.Name = resourceUpdate.Name
+
+			if resourceUpdate.Name == nil {
+				response.Error = "name cannot be null"
+				c.JSON(http.StatusUnprocessableEntity, response)
+				return
+
+			} else if *resourceUpdate.Name != "" {
+				resource.Name = *resourceUpdate.Name
 			}
 
-			if resourceUpdate.Kind != "" {
-				resource.Kind = resourceUpdate.Kind
+			if resourceUpdate.Kind == nil {
+				response.Error = "kind cannot be null"
+				c.JSON(http.StatusUnprocessableEntity, response)
+				return
+
+			} else if *resourceUpdate.Kind != "" {
+				resource.Kind = *resourceUpdate.Kind
 			}
 
-			if resourceUpdate.Capacity != 0 {
-				resource.Capacity = resourceUpdate.Capacity
+			if resourceUpdate.Capacity == nil {
+				response.Error = "capacity cannot be null"
+				c.JSON(http.StatusUnprocessableEntity, response)
+				return
+
+			} else if *resourceUpdate.Capacity != 0 {
+				resource.Capacity = *resourceUpdate.Capacity
 			}
 
 			ResourcesData[id] = resource
