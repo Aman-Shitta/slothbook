@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
-type rfc339 struct {
+type Rfc339Time struct {
 	Created_at time.Time
 	Updated_at time.Time
 }
 
 type Resource struct {
-	rfc339
+	Rfc339Time
 
 	Id       string
 	Name     string

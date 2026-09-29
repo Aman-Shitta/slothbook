@@ -1,17 +1,45 @@
 package server
 
 import (
+	"github.com/Aman-Shitta/slotbook/internal/booking"
+	"github.com/Aman-Shitta/slotbook/internal/resource"
+	"github.com/Aman-Shitta/slotbook/internal/responses"
 	"github.com/gin-gonic/gin"
 )
+
+var V1_APPVERSION string = "v0.1.0"
 
 func SetupRouter(port string) *gin.Engine {
 
 	servEngine := gin.Default()
 
-	servEngine.GET("/healthz", HealthHandler)
+	// V1 URL grouping
+	{
+		v1 := servEngine.Group("/v1")
 
-	servEngine.Match([]string{"GET", "POST"}, "/v1/resources/", ResourcesHandler)
+		// System
+		v1.GET("/healthz", func(c *gin.Context) {
+			c.JSON(
+				200,
+				responses.Response{
+					Success: true,
+					Data: gin.H{
+						"status":  "healthy",
+						"version": V1_APPVERSION,
+					},
+				},
+			)
+		})
 
-	servEngine.Match([]string{"GET", "DELETE", "PATCH"}, "/v1/resource/:id", ResourceHandler)
+		// Resources
+		v1.Match([]string{"GET", "POST"}, "/resources/", resource.ResourcesHandler)
+		v1.Match([]string{"GET", "DELETE", "PATCH"}, "/resource/:id", resource.ResourceHandler)
+
+		// Bookings
+		v1.Match([]string{"GET", "POST"}, "/bookings/", booking.BookingsHandler)
+		v1.GET("/resources/:resourceId/bookings/", booking.ResourceBookingsHandler)
+		v1.POST("/bookings/:id/cancel/", booking.CancelBookingHandler)
+	}
+
 	return servEngine
 }
