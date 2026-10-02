@@ -11,5 +11,6 @@ fmt:
 	go fmt
 
 build:
+	go mod tidy
 	go build -o server ./cmd/
 	./server
